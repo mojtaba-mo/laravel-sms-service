@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('mobile')->index();
             $table->string('code');
-            $table->string('token')->nullable();
+            $table->string('token', 60)->unique();
             $table->timestamp('expires_at');
             $table->boolean('used')->default(false);
             $table->timestamps();

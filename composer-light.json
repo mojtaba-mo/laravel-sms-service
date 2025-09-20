@@ -1,14 +1,13 @@
 {
-    "name": "mojtaba-mo/laravel-sms-service",
-    "description": "Simple SMS service using Melipayamak API SendByBaseNumber method",
+    "name": "mojtaba-mo/laravel-sms-service-light",
+    "description": "Lightweight SMS service using Melipayamak API - No database dependencies",
     "type": "library",
     "require": {
         "php": ">=8.0",
         "illuminate/support": "^10.0|^11.0|^12.0"
     },
     "suggest": {
-        "illuminate/database": "Required for OTP functionality with database storage",
-        "illuminate/http": "Required for HTTP functionality (if needed)"
+        "illuminate/database": "Required for full OTP functionality with database storage"
     },
     "license": "MIT",
     "autoload": {
@@ -16,14 +15,13 @@
             "OtpAuth\\": "src/"
         }
     },
-"extra": {
-    "laravel": {
-        "providers": [
-            "OtpAuth\\SmsServiceProvider"
-        ]
-    }
-}
-,
+    "extra": {
+        "laravel": {
+            "providers": [
+                "OtpAuth\\SmsServiceProvider"
+            ]
+        }
+    },
     "authors": [
         {
             "name": "mojtaba-mo",

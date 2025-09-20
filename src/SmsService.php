@@ -6,6 +6,7 @@ use OtpAuth\Models\Otp;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use function config;
 
 class SmsService
@@ -145,6 +146,9 @@ class SmsService
 
         // Generate random OTP code
         $code = random_int(1000, 9999);
+        
+        // Generate unique token
+        $token = $this->generateUniqueToken();
 
         try {
             DB::beginTransaction();
@@ -153,10 +157,11 @@ class SmsService
             $otp = Otp::create([
                 'mobile' => $mobile,
                 'code' => (string) $code,
+                'token' => $token,
                 'expires_at' => Carbon::now()->addMinutes($ttl),
                 'used' => false,
             ]);
-
+            
             // Send SMS using SendByBaseNumber
             $result = $this->sendByBaseNumber(
                 [(string) $code], // Pass code as template variable
@@ -178,6 +183,7 @@ class SmsService
                 'success' => true, 
                 'message' => 'کد تایید ارسال شد',
                 'code' => $code, // Return the generated code
+                'token' => $token, // Return the generated token
                 'recId' => $result
             ];
 
@@ -193,14 +199,19 @@ class SmsService
      * 
      * @param string $mobile Mobile number
      * @param string $code OTP code to verify
+     * @param string|null $token Token to verify (optional)
      * @return array
      */
-    public function verifyOtp(string $mobile, string $code): array
+    public function verifyOtp(string $mobile, string $code, string $token = null): array
     {
-        $otp = Otp::where('mobile', $mobile)
-                  ->where('code', $code)
-                  ->latest()
-                  ->first();
+        $query = Otp::where('mobile', $mobile)
+                    ->where('code', $code);
+        
+        if ($token) {
+            $query->where('token', $token);
+        }
+        
+        $otp = $query->latest()->first();
 
         if (!$otp) {
             return ['success' => false, 'message' => 'کد تایید نامعتبر است'];
@@ -231,5 +242,19 @@ class SmsService
         $min = pow(10, $length - 1);
         $max = pow(10, $length) - 1;
         return (string) random_int($min, $max);
+    }
+
+    /**
+     * Generate unique 40-character random token
+     * 
+     * @return string
+     */
+    public function generateUniqueToken(): string
+    {
+        do {
+            $token = Str::random(60);
+        } while (Otp::where('token', $token)->exists());
+
+        return $token;
     }
 }
