@@ -14,6 +14,7 @@ class SmsService
     protected string $username;
     protected string $password;
     protected string $endpoint;
+    protected int $bodyId;
 
     public function __construct()
     {
@@ -21,6 +22,7 @@ class SmsService
         $this->username = $config['username'];
         $this->password = $config['password'];
         $this->endpoint = $config['endpoint'];
+        $this->bodyId = $config['bodyId'];
     }
 
     /**
@@ -31,7 +33,7 @@ class SmsService
      * @param int $bodyId Predefined text template ID approved by system admin
      * @return string Return value as per API documentation
      */
-    public function sendByBaseNumber(array $text, string $to, int $bodyId): string
+    public function sendByBaseNumber(array $text, string $to): string
     {
         try {
             // Initialize SOAP client
@@ -44,7 +46,7 @@ class SmsService
                 "password" => $this->password,
                 "text" => $text,
                 "to" => $to,
-                "bodyId" => $bodyId
+                "bodyId" => $this->bodyId
             ];
             
             // Call the API
@@ -53,7 +55,7 @@ class SmsService
             // Log the result for debugging
             Log::info('SMS SendByBaseNumber Result', [
                 'to' => $to,
-                'bodyId' => $bodyId,
+                'bodyId' => $this->bodyId,
                 'result' => $result
             ]);
             
@@ -62,7 +64,7 @@ class SmsService
         } catch (\Exception $e) {
             Log::error('SMS SendByBaseNumber Error: ' . $e->getMessage(), [
                 'to' => $to,
-                'bodyId' => $bodyId,
+                'bodyId' => $this->bodyId,
                 'error' => $e->getMessage()
             ]);
             
@@ -126,7 +128,7 @@ class SmsService
      * @param int $bodyId Template ID for SMS
      * @return array
      */
-    public function sendOtp(string $mobile, int $bodyId): array
+    public function sendOtp(string $mobile): array
     {
         $dailyLimit = (int) config('sms.daily_limit', 3);
         $minInterval = (int) config('sms.min_interval_seconds', 120);
@@ -165,8 +167,7 @@ class SmsService
             // Send SMS using SendByBaseNumber
             $result = $this->sendByBaseNumber(
                 [(string) $code], // Pass code as template variable
-                $mobile,
-                $bodyId
+                $mobile
             );
 
             if (!$this->isSuccess($result)) {
@@ -202,7 +203,7 @@ class SmsService
      * @param string|null $token Token to verify (optional)
      * @return array
      */
-    public function verifyOtp(string $mobile, string $code, string $token = null): array
+    public function verifyOtp(string $mobile, string $code, ?string $token = null): array
     {
         $query = Otp::where('mobile', $mobile)
                     ->where('code', $code);
